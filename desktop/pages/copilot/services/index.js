@@ -120,18 +120,14 @@ class CopilotClient {
     } = options
 
     if (!skipPreflightCheck && !Array.isArray(deviceId)) {
-      const subscribeStore = useSubscribeStore()
       const copilotStore = useCopilotStore()
       const copilotConfig = copilotStore.config || {}
 
       const checker = await this._getPreflightChecker()
 
-      await subscribeStore.init()
-
       const checkResult = await checker.runAll({
         deviceId,
         copilotConfig,
-        subscribeStore,
       })
 
       if (!checkResult.passed) {
