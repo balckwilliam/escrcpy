@@ -10,9 +10,12 @@ on:
 jobs:
   sync-homebrew:
     runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
     steps:
       - name: Update Homebrew cask
+        if: env.GH_TOKEN != ''
         uses: LanikSJ/homebrew-bump-cask@v1
         with:
           token: ${{ secrets.GH_TOKEN }}
