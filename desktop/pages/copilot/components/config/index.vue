@@ -96,22 +96,6 @@
                         </el-icon>
                       </el-button>
                     </template>
-
-                    <template #append>
-                      <el-button
-                        v-if="subscribeStore.isLoggedIn && subscribeStore.isActive"
-                        @click="onAutoConfigSubscribe"
-                      >
-                        {{ $t('subscribe.config.auto') }}
-                      </el-button>
-
-                      <el-button
-                        v-else
-                        @click="openSubscribePage"
-                      >
-                        {{ $t('subscribe.config.quickAcquire') }}
-                      </el-button>
-                    </template>
                   </el-input>
                 </el-form-item>
               </el-col>
@@ -207,7 +191,6 @@ const props = defineProps({
 
 const emit = defineEmits([])
 
-const subscribeStore = useSubscribeStore()
 const copilotStore = useCopilotStore()
 
 const dialog = useDialog()
@@ -258,7 +241,6 @@ function onProviderChange(val) {
 }
 
 async function onOpen() {
-  subscribeStore.init()
 }
 
 function onClose() {
@@ -284,22 +266,6 @@ async function onSaveClick() {
       console.error('Config save failed:', error)
       ElMessage.error(t('copilot.config.saveFailed'))
     }
-  }
-}
-
-function openSubscribePage() {
-  window.$preload.ipcRenderer.invoke('navigate-to-route', '/subscribe')
-}
-
-async function onAutoConfigSubscribe() {
-  try {
-    copilotStore.switchGiteeConfig()
-
-    ElMessage.success(t('common.success'))
-  }
-  catch (error) {
-    console.error('onAutoConfigSubscribe.error:', error)
-    ElMessage.error(t('common.failed'))
   }
 }
 

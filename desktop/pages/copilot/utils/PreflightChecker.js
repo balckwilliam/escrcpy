@@ -13,26 +13,12 @@ export const CheckStatus = {
 }
 
 /**
- * Subscription status enumeration
- */
-export const SubscriptionStatus = {
-  /** Active */
-  ACTIVE: 'ACTIVE',
-  /** Expired */
-  EXPIRED: 'EXPIRED',
-  /** Quota exhausted */
-  EXHAUSTED: 'EXHAUSTED',
-  /** Not purchased */
-  NOT_PURCHASED: 'NOT_PURCHASED',
-}
-
-/**
  * @typedef {Object} CheckResult
  * @property {string} status - Check status (PASS | WARN | FAIL | SKIP)
  * @property {string} name - Name of the check
  * @property {string} [message] - User-facing message or hint
  * @property {Object} [details] - Additional details
- * @property {string} [actionType] - Suggested action type ('install' | 'configure' | 'subscribe' | 'none')
+ * @property {string} [actionType] - Suggested action type ('install' | 'configure' | 'none')
  * @property {Function} [action] - Optional auto-fix action
  */
 
@@ -40,10 +26,8 @@ export const SubscriptionStatus = {
  * @typedef {Object} PreflightCheckOptions
  * @property {string} deviceId - Device ID
  * @property {Object} copilotConfig - Copilot configuration
- * @property {Object} [subscribeStore] - Subscription store (optional, used for subscription checks)
  * @property {boolean} [skipKeyboardCheck=false] - Skip ADB keyboard check
  * @property {boolean} [skipApiCheck=false] - Skip API service check
- * @property {boolean} [skipSubscriptionCheck=false] - Skip subscription status check
  */
 
 /**
@@ -68,10 +52,8 @@ export class PreflightChecker {
     const {
       deviceId,
       copilotConfig,
-      subscribeStore,
       skipKeyboardCheck = false,
       skipApiCheck = false,
-      skipSubscriptionCheck = false,
     } = options
 
     const results = []
@@ -86,12 +68,6 @@ export class PreflightChecker {
     if (!skipApiCheck) {
       const apiResult = await this.checkAPIService(copilotConfig)
       results.push(apiResult)
-    }
-
-    // Layer 3: subscription status check
-    if (!skipSubscriptionCheck && subscribeStore) {
-      const subscriptionResult = await this.checkSubscription(copilotConfig, subscribeStore)
-      results.push(subscriptionResult)
     }
 
     // Collect failed checks
@@ -211,68 +187,6 @@ export class PreflightChecker {
         actionType: 'configure',
         details: { error: error.message },
       }
-    }
-  }
-
-  /**
-   * Layer 3: subscription status check
-   *
-   * @param {Object} copilotConfig - Copilot configuration
-   * @param {Object} subscribeStore - Subscription store
-   * @returns {Promise<CheckResult>}
-   */
-  async checkSubscription(copilotConfig, subscribeStore) {
-    const { apiKey } = copilotConfig
-
-    // Determine whether using built-in subscription service
-    const isUsingBuiltinSubscription = apiKey === subscribeStore.accessToken
-
-    if (!isUsingBuiltinSubscription) {
-      return {
-        name: window.t('copilot.check.subscription.name'),
-        status: CheckStatus.SKIP,
-        message: window.t('copilot.check.subscription.customKeySkipped'),
-        actionType: 'none',
-        details: { usingBuiltin: false },
-      }
-    }
-
-    // Check subscription status
-    const purchaseStatus = subscribeStore.userInfo?.purchase_status || SubscriptionStatus.NOT_PURCHASED
-
-    const statusMessages = {
-      [SubscriptionStatus.ACTIVE]: {
-        status: CheckStatus.PASS,
-        message: window.t('copilot.check.subscription.active'),
-        actionType: 'none',
-      },
-      [SubscriptionStatus.EXPIRED]: {
-        status: CheckStatus.FAIL,
-        message: window.t('copilot.check.subscription.expired'),
-        actionType: 'subscribe',
-      },
-      [SubscriptionStatus.EXHAUSTED]: {
-        status: CheckStatus.FAIL,
-        message: window.t('copilot.check.subscription.exhausted'),
-        actionType: 'subscribe',
-      },
-      [SubscriptionStatus.NOT_PURCHASED]: {
-        status: CheckStatus.FAIL,
-        message: window.t('copilot.check.subscription.notPurchased'),
-        actionType: 'subscribe',
-      },
-    }
-
-    const statusInfo = statusMessages[purchaseStatus] || statusMessages[SubscriptionStatus.NOT_PURCHASED]
-
-    return {
-      name: window.t('copilot.check.subscription.name'),
-      ...statusInfo,
-      details: {
-        usingBuiltin: true,
-        purchaseStatus,
-        userInfo: subscribeStore.userInfo,
-      },
     }
   }
 
